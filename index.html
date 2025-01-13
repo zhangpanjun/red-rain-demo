@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>红包雨demo</title>
+</head>
+<style>
+    .box{
+        width:100%;
+        height:100vh;
+    }
+</style>
+<script src="./redWrapRain/red-wrap-rain.js"></script>
+<body>
+    <div class="box">
+        <button onclick="doRain()">开始红包雨，红包雨持续时间15秒</button>
+        <div id="rain-over"></div>
+    </div>
+
+<script>
+function doRain(){
+    let params ={
+         duration: 15, //红包雨时长（单位：秒）
+		space: 300, // 生成红包间隔（单位：毫秒）
+		speedMax: 10, // 红包下落速度随机值__最大值
+		speedMin: 5, // 红包下落速度随机值__最小值
+		blessDie: 500, // 祝福语当前状态( 创建 | 消失 )（单位：毫秒）
+		redImgSrc: './img/bag.png', // 红包图片
+		redImgRatio: 1, // 红包宽高比例
+		activityTheme: '福袋'}
+		let rwr = new RedWrapRain(params);
+		rwr.start((redPacketsCount) => {
+			// console.log('回调红包个数', redPacketsCount);
+            document.getElementById('rain-over').innerHTML=`红包雨结束，您抢到${redPacketsCount}个红包`
+	});
+}
+</script>
+</body>
+</html>
