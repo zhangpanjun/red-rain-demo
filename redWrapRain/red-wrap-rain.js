@@ -1,17 +1,24 @@
 class Img {
 	constructor() {
-		this.Src = '../img/bag.png';
+		this.Src = '../img/bag.png';// 定义一个默认图片
 	}
 }
 
-// RAF
+// 红包下落方法类（每个红包会循环调用下落函数，只有当  当前红包超出屏幕/红包雨时长结束  才会停止对应红包的定时器）
 class downInterval {
-	#timerId = null;
-	#loop = null;
-	#count = 0;
-	#timer = Date.now();
-	#return = false;
+	#timerId = null;// 每个红包 下落定时器
+	#loop = null;//loop函数（下落执行函数）
+	#count = 0; // 计数
+	#timer = Date.now();// 当前时间
+	#return = false; // 定时器是否停止flag
 	// 构造器
+    /**
+     *
+     * @param {*} cb 回调函数
+     * @param {*} time 下降速度
+     * @param {*} rain_over 红包雨是否结束标识
+     * @returns
+     */
 	constructor(cb, time = 0, rain_over) {
 		if (typeof (time * 1) !== 'number') {
 			cb(new Error('抱歉! 您的时间参数必须为 数字类型 或者 字符串数字类型'));
@@ -20,11 +27,11 @@ class downInterval {
 
 		this.#loop = () => {
 			if (Date.now() > this.#timer + time * (this.#count + 1)) {
-				cb(this.#count);
+				cb();
 				this.#count++;
 			}
 			if (this.#return || rain_over) return; // 如果标识为true 就是停止定时器
-			this.#timerId = requestAnimationFrame(this.#loop);
+			this.#timerId = requestAnimationFrame(this.#loop);// 创建定时器
 		};
 		this.#timerId = requestAnimationFrame(this.#loop);
 	}
@@ -35,15 +42,21 @@ class downInterval {
 		cancelAnimationFrame(this.#timerId); // 清除 requestAnimationFrame
 	}
 }
-// RAF
+// 红包方法类（每创建一个红包就会调用函数来实现  红包数量及红包雨已执行时长++ 当执行时长>=设定的红包雨时长，才会停止生成红包定时器）
 class Interval {
-	#timerId = null;
-	#loop = null;
-	#redCount = 0;
-	#timer = Date.now();
-	#secondCount = 0;
-	#return = false;
+	#timerId = null; // 定时器
+	#loop = null; // 红包定时执行函数
+	#redCount = 0;//红包数量
+	#timer = Date.now();// 当前时间
+	#secondCount = 0;// 已执行红包雨时长
+	#return = false;// 红包雨结束标识
 	// 构造器
+    /**
+     *
+     * @param {*} cb 回调函数
+     * @param {*} space 间隔多久生成下一个红包
+     * @returns
+     */
 	constructor(cb, space = 0) {
 		if (typeof (space * 1) !== 'number') {
 			cb(new Error('抱歉! 您的时间参数必须为 数字类型 或者 字符串数字类型'));
@@ -51,7 +64,9 @@ class Interval {
 		}
 		this.#loop = () => {
 			if (Date.now() > this.#timer + space * (this.#redCount + 1)) {
+                //每生成一个红包，红包数量+1
 				if (Date.now() > this.#timer + 1000 * (this.#secondCount + 1)) {
+                    // 每过1000毫秒，已执行红包雨时长+1
 					this.#secondCount++;
 				}
 				cb(this.#redCount, this.#secondCount);
@@ -70,7 +85,7 @@ class Interval {
 		cancelAnimationFrame(this.#timerId); // 清除 requestAnimationFrame
 	}
 }
-// 红包雨
+// 实现红包雨方法类
  class RedWrapRain extends Img {
 	#rain_over = false; // 红包雨是否执行完毕
 	#Fragment = null; // 文档碎片
@@ -94,7 +109,7 @@ class Interval {
 		T.#initDownParams(T, params);
 	}
 
-	// 初始化红包下落状态参数
+	// 接收外部传入的红包雨参数
 	#initDownParams = (T, params) => {
 		T.#space = params.space ? (params.space <= 300 ? 300 : params.space) : T.#space;
 		T.#speed_max = params.speedMax ? params.speedMax : T.#speed_max;
@@ -260,7 +275,7 @@ class Interval {
 			transNumberDisplay = document.querySelector('#red-rain-countdown-number'); // 倒计时文字元素
 		T.#startCountdown(T, secondCount, transDisplay, transNumberDisplay);
 	};
-	// 渲染到页面
+	// 将红包容器渲染到页面
 	#renderTo_page = (T) => {
 		T.#Body.appendChild(T.#Fragment);
 	};
@@ -272,19 +287,22 @@ class Interval {
 	#hideFrom_page = () => {
 		document.getElementById('rwr-wrap').style.visibility = 'hidden';
 	};
-	// 开始下红包
+	// 开启红包雨
 	start = (callback) => {
 		if (this.#rain_over) return;
 		this.#rainOverCallbackFun = callback ? callback : this.#rainOverCallbackFun;
-		this.#createRWR_wrap(this);
-		this.#renderTo_page(this);
-		this.#create_RW(this);
+		this.#createRWR_wrap(this);// 先创建红包雨dom容器
+		this.#renderTo_page(this);//渲染到页面
+		this.#create_RW(this);//开启定时器创建红包
 	};
 	// 红包雨结束后回调
 	end = () => {
+        // 将红包雨容器移除视线
 		this.#hideFrom_page();
+        // 将戳中的红包数包裹返回
 		this.#rainOverCallbackFun(this.#red_clicked_count);
 	};
+    // 将红包容器彻底从page中移除
 	remove = () => {
 		this.#removeFrom_page();
 	};
@@ -294,23 +312,24 @@ class Interval {
 			let img = document.createElement('img');
 			img.src = T.#red_img_src;
 			img.draggable = false;
-			img.id = redCount + 1;
-			let random_height = Math.floor(Math.random() * 80) + 100;
-			let random_width = random_height * T.#red_img_ratio;
+			img.id = redCount + 1;// 给每个红包一个唯一id
+			let random_height = Math.floor(Math.random() * 80) + 100;// 随机生成红包高度
+			let random_width = random_height * T.#red_img_ratio; // 按照传入的红包图片宽高比例得到随机生成的红包的宽度，防止变形
 			let rotateZ_F =
 				Math.floor(Math.random() * 10) % 2 == 0
 					? -Math.floor(Math.random() * 25)
-					: Math.floor(Math.random() * 25);
+					: Math.floor(Math.random() * 25);// 图片随机翻转角度
 			img.style.cssText = `pointer-events: auto;position: absolute;left: ${Math.floor(
 				Math.random() * (document.body.clientWidth - 180)
 			)}px; top: -250px; width: ${random_width}px; height:${random_height}px; transform: rotate(${rotateZ_F}deg); cursor: pointer; user-select:none;`;
-			T.#doSliding(T, secondCount);
-			if (secondCount >= T.#duration) {
+			T.#doSliding(T, secondCount);// 创建红包的同时，执行红包雨时长倒计时动画展示效果
+			if (secondCount >= T.#duration) { // 若红包雨时长>=设定的红包雨时长则终止红包雨定时器，清空红包点击事件list,并将红包雨容器隐藏
 				T.#rain_over = true;
 				T.#timer.clear();
 				T.#click_arr = [];
 				T.end();
 			} else {
+                // 否则生成红包，给每个红包绑定点击事件，执行下落定时器
 				T.#RWR_wrap.appendChild(img);
 				T.#RW_click(T, img);
 				T.#down(T, img, secondCount);
@@ -319,15 +338,20 @@ class Interval {
 	};
 
 	// 下落方法
+    /**
+     *
+     * @param {*} T 类this指向
+     * @param {*} img 当前下落红包
+     */
 	#down = (T, img) => {
-		let stp = Math.random() * T.#speed_max + T.#speed_min;
+		let stp = Math.random() * T.#speed_max + T.#speed_min;// 随机生成当前img距离顶部高度，根据传入的下落速度最小最大值来控制下落速度
 		let timer = new downInterval(
 			() => {
 				img.style.top = img.style.top.split('px')[0] * 1 + stp + 'px';
-				if (img.getBoundingClientRect().top > document.body.clientHeight) {
-					timer.clear();
-					T.#RWR_wrap.removeChild(img);
-					T.#find_RW(T, img.getAttribute('id') * 1);
+				if (img.getBoundingClientRect().top > document.body.clientHeight) { // 当前红包超出屏幕高度则，
+					timer.clear(); //清除此红包下落定时器
+					T.#RWR_wrap.removeChild(img); // 从红包容器中移除元素
+					T.#find_RW(T, img.getAttribute('id') * 1);// 从红包点击事件中移除对应事件
 					if (T.#RWR_wrap.children.length <= 1) {
 						// 如果红包都到屏幕下方，看不见了，则把红包容器删掉
 						T.remove();
@@ -345,10 +369,10 @@ class Interval {
 			id: img.getAttribute('id') * 1,
 			el: img,
 			event: function () {
-				T.#find_RW(T, img.getAttribute('id') * 1);
-				T.#red_clicked_count += 1;
+				T.#find_RW(T, img.getAttribute('id') * 1);// 戳中一次后就不能再次戳中了
+				T.#red_clicked_count += 1;//戳中则抢到的数量+1
 				document.getElementById('red-rain-get-reward-count').textContent =
-					T.#red_clicked_count;
+					T.#red_clicked_count; // 动态更新视图 已抢红包数量
 			},
 		};
 		img.addEventListener('click', obj.event);
